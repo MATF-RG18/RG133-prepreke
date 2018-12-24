@@ -1,11 +1,21 @@
 #include<GL/glut.h>
+#include<stdlib.h>
+#include<stdio.h>
+
+#define TIMER_INTERVAL 20
+#define TIMER_ID 1
 
 static int window_width, window_height;
 
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_reshape(int width, int height);
 static void on_display(void);
-int k = 0;
+static void on_timer(int value);
+
+int moving_object = 0;
+int animation_ongoing = 0;
+float gravity = 0;
+
 int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
@@ -21,7 +31,6 @@ int main(int argc, char **argv)
 
     glClearColor(1, 1, 1, 0);
     glEnable(GL_DEPTH_TEST);
-    glLineWidth(4);
 
     glutMainLoop();
 
@@ -37,17 +46,37 @@ static void on_keyboard(unsigned char key, int x, int y)
         /* Pomeramo objekat udesno i iscrtavamo ga*/
         case 'd':
             {
-                 k = k + 1;
-                 on_display();
+                 moving_object++;
+                 glutPostRedisplay();
             }
             break;
         /* Pomeramo objekat ulevo i iscrtavamo ga*/
         case 'a':
             {
-                 k = k -1;
-                 on_display();
+                 moving_object--;
+                 glutPostRedisplay();
             }
             break;
+        /* Proba timera pritiskom na space */
+        case ' ':
+            animation_ongoing = 1 - animation_ongoing;
+            glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
+            break;
+    }
+}
+
+static void on_timer(int value)
+{
+    if(value != TIMER_ID)
+    return;
+    gravity += 0.01;
+    
+
+    glutPostRedisplay();
+
+    if(animation_ongoing)
+    {
+        glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);
     }
 }
 
@@ -55,6 +84,27 @@ static void on_reshape(int width, int height)
 {
     window_width = width;
     window_height = height;
+}
+
+static void drawCube()
+{
+    glColor3f(0.7, 0.7, 0.7);
+    glutSolidCube(1);
+
+    glLineWidth(4);
+    glColor3f(0, 0, 0);
+    glutWireCube(1);
+}
+
+static void drawStage()
+{
+    glColor3f(0.3, 0.3, 0.3);
+    glBegin(GL_POLYGON);
+        glVertex3f(-2, -0.51,   5);
+        glVertex3f( 2, -0.51,   5);
+        glVertex3f( 2, -0.51, -30);
+        glVertex3f(-2, -0.51, -30);
+    glEnd();
 }
 
 static void on_display(void)
@@ -71,12 +121,14 @@ static void on_display(void)
     glLoadIdentity();
     gluLookAt(0, 2, 5, 0, 0, 0, 0, 1, 0);
     
+    /*Iscrtavamo podijum*/
+    drawStage();
+    
     /*Iscrtavamo objekat*/
-    glTranslatef(k, 0, 0);
-    glColor3f(0.7, 0.7, 0.7);
-    glutSolidCube(1);
-    glColor3f(0, 0, 0);
-    glutWireCube(1);
+    glPushMatrix();
+        glTranslatef(moving_object, -gravity, 0);
+        drawCube();
+    glPopMatrix();
 
     glutSwapBuffers();
 }
