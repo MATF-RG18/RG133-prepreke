@@ -2,10 +2,12 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<math.h>
+#include<time.h>
 
 #define TIMER_INTERVAL 20
 #define TIMER_JMP 1
 #define TIMER_FALL 2
+#define TIMER_OBSTACLES 3
 #define PI 3.14159265358979323
 
 static int window_width, window_height;
@@ -23,13 +25,23 @@ int falling_animation = 0;
 float falling_rotate = 0;
 float falling_translate = 0;
 float falling_down = 0;
+float obstacles_animation = 0;
+float obstacles_animation_2 = -20;
+float obstacles_animation_3 = -40;
+float obstacles_animation_4 = -60;
+float obstacles_animation_5 = -80;
+int position = 0;
+int position_2 = 0;
+int position_3 = 0;
+int position_4 = 0;
+int position_5 = 0;
 int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB |GLUT_DEPTH | GLUT_DOUBLE);
     
     /*Ispis kontrola u teminalu*/
-    printf("##############################\nESC - to close the game;\nSPACE - to start the game;\nR - to restart the game;\nA - to go left;\nD - to go right;\nW - to jump;\n");
+    printf("ESC - to close the game;\nSPACE - to start the game;\nR - to restart the game;\nA - to go left;\nD - to go right;\nW - to jump;\n");
 
 
     glutInitWindowSize(600, 600);
@@ -96,9 +108,10 @@ static void on_keyboard(unsigned char key, int x, int y)
         /* Proba timera pritiskom na space */
         case ' ':
             game_started = 1;
-            /*glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_ID);*/
+            glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_OBSTACLES);
             break;
         case 'r':
+            printf("Press SPACE to start the game\n");
             game_started = 0;
             moving_object = 0;
             jumping_animation = 0;
@@ -107,6 +120,11 @@ static void on_keyboard(unsigned char key, int x, int y)
             falling_rotate = 0;
             falling_translate = 0;
             falling_down = 0;
+            obstacles_animation = 0;
+            obstacles_animation_2 = -20;
+            obstacles_animation_3 = -40;
+            obstacles_animation_4 = -60;
+            obstacles_animation_5 = -80;
             glutPostRedisplay();
             break;
     }
@@ -115,7 +133,7 @@ static void on_keyboard(unsigned char key, int x, int y)
 static void on_timer(int value)
 {
     if(value == TIMER_JMP) {
-        jumping += 0.01;
+        jumping += 0.025;
         if(jumping >= 1) {
             jumping_animation = 0;
             jumping = 0;
@@ -128,19 +146,39 @@ static void on_timer(int value)
     if(value == TIMER_FALL) {
         if(falling_rotate < 1) {
             falling_rotate += 0.05;
+        glutPostRedisplay();
+        if(falling_animation)
+            glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
         }
         else if(falling_rotate < 4) {
             falling_translate += 0.015;
             falling_rotate += 0.07;
+             glutPostRedisplay();
+            if(falling_animation)
+                glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
         }
-        else {
+        else if(falling_down < 3){
             falling_translate += 0.01;
             falling_down += 0.05;
             falling_rotate += 0.07;
+            glutPostRedisplay();
+            if(falling_animation)
+                glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
         }
+         else {
+            printf("You have died\n");
+            falling_animation = 0;
+        }
+    }
+    if(value == TIMER_OBSTACLES) {
+        obstacles_animation += 0.15;
+        obstacles_animation_2 += 0.15;
+        obstacles_animation_3 += 0.15;
+        obstacles_animation_4 += 0.15;
+        obstacles_animation_5 += 0.15;
         glutPostRedisplay();
-        if(falling_animation)
-            glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
+        if(game_started)
+            glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_OBSTACLES);
     }
 }
 
@@ -188,13 +226,88 @@ static void drawCube()
 
 static void drawStage()
 {
-    glColor3f(0.3, 0.3, 0.3);
+    GLfloat ambient_coefs[] = {0.3, 0.3, 0.3, 1};
+    GLfloat diffuse_coefs[] = {0.3,  0.3,  0.3,  1};
+    GLfloat specular_coefs[] = {0.3,  0.3,  0.3,  1};
+    GLfloat shininess = 0;
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coefs);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coefs);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specular_coefs);
+    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+    
     glBegin(GL_POLYGON);
         glVertex3f(-2, -0.51,   4);
         glVertex3f( 2, -0.51,   4);
         glVertex3f( 2, -0.51, -100);
         glVertex3f(-2, -0.51, -100);
     glEnd();
+}
+
+void obstacles()
+{
+    GLfloat ambient_coefs[] = {0, 0, 1, 1};
+    GLfloat diffuse_coefs[] = {0.07568,  0.61424,  0.07568,  1};
+    GLfloat specular_coefs[] = {0.633,  0.727811,  0.633,  1};
+    GLfloat shininess = 0.6 * 128.0;
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coefs);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_coefs);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, specular_coefs);
+    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+    
+    if(obstacles_animation == 0) {
+        srand(time(0));
+        int r = rand() % 3;
+    
+        if(r == 0) 
+            position = -1;
+        else if(r == 1) 
+            position = 1;
+        else
+            position = 0;
+    }
+    if(obstacles_animation_2 == 0) {
+        srand(time(0));
+        int r = rand() % 3;
+        if(r == 0)
+            position_2 = 0;
+        else if(r == 1)
+            position_2 = -1;
+        else
+            position_2 = 1;
+    }
+    if(obstacles_animation_3 == 0) {
+        srand(time(0));
+        int r = rand() % 3;
+        if(r == 0)
+            position_3 = 1;
+        else if(r == 1)
+            position_3 = 0;
+        else
+            position_3 = -1;
+    }
+    if(obstacles_animation_4 == 0) {
+        srand(time(0));
+        int r = rand() % 3;
+        if(r == 0)
+            position_4 = 0;
+        else if(r == 1)
+            position_4 = 1;
+        else
+            position_4 = -1;
+    }
+    if(obstacles_animation_5 == 0) {
+        srand(time(0));
+        int r = rand() % 3;
+        if(r == 0)
+            position_5 = -1;
+        else if(r == 1)
+            position_5 = 1;
+        else
+            position_5 = 0;
+    }
+    glutSolidCube(1);
 }
 
 static void on_display(void)
@@ -207,7 +320,24 @@ static void on_display(void)
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
         }
     }
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    /*Da li smo udarili u prepreku*/
+    if(obstacles_animation > 99.1 && (position == moving_object)&& obstacles_animation < 101)
+        game_started = 0;
+    if(obstacles_animation_2 > 99.1 && (position_2 == moving_object)&& obstacles_animation_2 < 101)
+        game_started = 0;
+    if(obstacles_animation_3 > 99.1 && (position_3 == moving_object)&& obstacles_animation_3 < 101)
+        game_started = 0;
+    if(obstacles_animation_4 > 99.1 && (position_4 == moving_object)&& obstacles_animation_4 < 101)
+        game_started = 0;
+    if(obstacles_animation_5 > 99.1 && (position_5 == moving_object)&& obstacles_animation_5 < 101)
+        game_started = 0;
+
+
+
+
+
+   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glViewport(0, 0, window_width, window_height);
     
@@ -224,13 +354,54 @@ static void on_display(void)
     
     /*Iscrtavamo objekat*/
     glPushMatrix();
+        /*Rotacija dole za padanje*/
         glRotatef(-(moving_object)/2.0*falling_down*15, 0, 0, 1);
+        /*Translacija za pomeranje i skakanje*/
         glTranslatef(moving_object, 1 - cos(2*jumping*PI), 0);
+        /*Rotacija pri skakanju*/
         glRotatef(15*(1 - cos(2*PI*jumping)), 1, 0, 0);
+        /*Translacija i Rotacija pri padanju*/
         glTranslatef((moving_object)/2.0*falling_translate, -falling_translate/3.0, 0);
         glRotatef(-(moving_object)/2.0*falling_rotate*15, 0, 0, 1);
+        /*Iscrtavanje objekta*/
         drawCube();
     glPopMatrix();
 
-    glutSwapBuffers();
+    if(obstacles_animation >= 105) 
+        obstacles_animation = 0;
+    /*Iscrtava se prepreka*/
+    glPushMatrix();
+        glTranslatef(position, 0,obstacles_animation - 100);
+        obstacles();
+    glPopMatrix();
+    
+    if(obstacles_animation_2 >= 105)
+        obstacles_animation_2 = 0;
+    glPushMatrix();
+        glTranslatef(position_2, 0, obstacles_animation_2 - 100);
+        obstacles();
+    glPopMatrix();
+
+    if(obstacles_animation_3 >= 105)
+        obstacles_animation_3 = 0;
+    glPushMatrix();
+        glTranslatef(position_3, 0, obstacles_animation_3 - 100);
+        obstacles();
+    glPopMatrix();
+
+    if(obstacles_animation_4 >= 105)
+        obstacles_animation_4 = 0;
+    glPushMatrix();
+        glTranslatef(position_4, 0, obstacles_animation_4 - 100);
+        obstacles();
+    glPopMatrix();
+    
+    if(obstacles_animation_5 >= 105)
+        obstacles_animation_5 = 0;
+    glPushMatrix();
+        glTranslatef(position_5, 0, obstacles_animation_5 - 100);
+        obstacles();
+    glPopMatrix();
+
+  glutSwapBuffers();
 }
