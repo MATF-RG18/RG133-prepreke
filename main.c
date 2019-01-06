@@ -133,7 +133,7 @@ static void on_keyboard(unsigned char key, int x, int y)
 static void on_timer(int value)
 {
     if(value == TIMER_JMP) {
-        jumping += 0.025;
+        jumping += 0.015;
         if(jumping >= 1) {
             jumping_animation = 0;
             jumping = 0;
@@ -164,9 +164,10 @@ static void on_timer(int value)
             glutPostRedisplay();
             if(falling_animation)
                 glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
-        }
+            }
          else {
-            printf("You have died\n");
+            printf("You died\n");
+            game_started = 0;
             falling_animation = 0;
         }
     }
@@ -314,7 +315,7 @@ static void on_display(void)
 {
     
     if(moving_object > 1 || moving_object < -1) { 
-        game_started = 0;
+        /*game_started = 0;*/
         if(!falling_animation) {
             falling_animation = 1;
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
@@ -322,17 +323,28 @@ static void on_display(void)
     }
     
     /*Da li smo udarili u prepreku*/
-    if(obstacles_animation > 99.1 && (position == moving_object)&& obstacles_animation < 101)
-        game_started = 0;
-    if(obstacles_animation_2 > 99.1 && (position_2 == moving_object)&& obstacles_animation_2 < 101)
-        game_started = 0;
-    if(obstacles_animation_3 > 99.1 && (position_3 == moving_object)&& obstacles_animation_3 < 101)
-        game_started = 0;
-    if(obstacles_animation_4 > 99.1 && (position_4 == moving_object)&& obstacles_animation_4 < 101)
-        game_started = 0;
-    if(obstacles_animation_5 > 99.1 && (position_5 == moving_object)&& obstacles_animation_5 < 101)
-        game_started = 0;
-
+    if(jumping < 0.25 || jumping > 0.75) {
+        if(obstacles_animation > 99.1 && (position == moving_object)&& obstacles_animation < 101) {
+            game_started = 0;
+            printf("You died\n");
+        }
+        if(obstacles_animation_2 > 99.1 && (position_2 == moving_object)&& obstacles_animation_2 < 101) {
+            game_started = 0;
+            printf("You died\n");
+        }
+        if(obstacles_animation_3 > 99.1 && (position_3 == moving_object)&& obstacles_animation_3 < 101) {
+            game_started = 0;
+            printf("You died\n");
+        }
+        if(obstacles_animation_4 > 99.1 && (position_4 == moving_object)&& obstacles_animation_4 < 101) {
+            game_started = 0;
+            printf("You died\n");
+        }
+        if(obstacles_animation_5 > 99.1 && (position_5 == moving_object)&& obstacles_animation_5 < 101) {
+            game_started = 0;
+            printf("You died\n");
+        }
+    }
 
 
 
