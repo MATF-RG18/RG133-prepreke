@@ -35,6 +35,8 @@ int position_2 = 0;
 int position_3 = 0;
 int position_4 = 0;
 int position_5 = 0;
+unsigned Score = 0;
+float speed = 0;
 int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
@@ -57,9 +59,9 @@ int main(int argc, char **argv)
 
     /*Nameštamo osvetljenje*/
     GLfloat light_position[] = {3, 3, 1, 0};
-    GLfloat light_ambient[] = {0.7, 0.7, 0.7, 1};
-    GLfloat light_diffuse[] = {0.4, 0.4, 0.4, 1};        
-    GLfloat light_specular[] = {0.8, 0.8, 0.8, 0};
+    GLfloat light_ambient[] = {0.6, 0.6, 0.6, 1};
+    GLfloat light_diffuse[] = {0.3, 0.3, 0.3, 1};        
+    GLfloat light_specular[] = {0.5, 0.5, 0.5, 0};
     glEnable(GL_LIGHTING);
     /*Postavlja se desno svetlo*/
     glEnable(GL_LIGHT0);
@@ -75,6 +77,45 @@ int main(int argc, char **argv)
     glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
 
+        srand(time(NULL));
+        int r = rand() % 3;
+    
+        if(r == 0) 
+            position = -1;
+        else if(r == 1) 
+            position = 1;
+        else
+            position = 0;
+        r = rand() % 3;
+        if(r == 0)
+            position_2 = 0;
+        else if(r == 1)
+            position_2 = 1;
+        else
+            position_2 = -1;
+        r = rand() % 3;
+        if(r == 0)
+            position_3 = 1;
+        else if(r == 1)
+            position_3 = 0;
+        else
+            position_3 = -1;
+        r = rand() % 3;
+        if(r == 0)
+            position_4 = -1;
+        else if(r == 1)
+            position_4 = 0;
+        else
+            position_4 = 1;
+    
+        r = rand() % 3;
+        if(r == 0)
+            position_5 = -1;
+        else if(r == 1)
+            position_5 = 0;
+        else
+            position_5 = 1;
+    
     glutMainLoop();
 
     return 0;
@@ -107,8 +148,10 @@ static void on_keyboard(unsigned char key, int x, int y)
                 break;
         /* Proba timera pritiskom na space */
         case ' ':
-            game_started = 1;
-            glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_OBSTACLES);
+            if(!game_started && !jumping_animation) {
+                game_started = 1;
+                glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_OBSTACLES);
+            }
             break;
         case 'r':
             printf("Press SPACE to start the game\n");
@@ -125,6 +168,8 @@ static void on_keyboard(unsigned char key, int x, int y)
             obstacles_animation_3 = -40;
             obstacles_animation_4 = -60;
             obstacles_animation_5 = -80;
+            speed = 0;
+            Score = 0;
             glutPostRedisplay();
             break;
     }
@@ -133,7 +178,7 @@ static void on_keyboard(unsigned char key, int x, int y)
 static void on_timer(int value)
 {
     if(value == TIMER_JMP) {
-        jumping += 0.015;
+        jumping += 0.025;
         if(jumping >= 1) {
             jumping_animation = 0;
             jumping = 0;
@@ -144,39 +189,44 @@ static void on_timer(int value)
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_JMP);
     }
     if(value == TIMER_FALL) {
+        if(game_started != 0) {
         if(falling_rotate < 1) {
-            falling_rotate += 0.05;
+            falling_rotate += 0.07;
         glutPostRedisplay();
         if(falling_animation)
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
         }
-        else if(falling_rotate < 4) {
-            falling_translate += 0.015;
+        else if(falling_rotate < 2.8) {
+            falling_translate += 0.02;
             falling_rotate += 0.07;
              glutPostRedisplay();
             if(falling_animation)
                 glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
         }
-        else if(falling_down < 3){
-            falling_translate += 0.01;
-            falling_down += 0.05;
+        else if(falling_down < 4){
+            falling_translate += 0.02;
+            falling_down += 0.1;
             falling_rotate += 0.07;
             glutPostRedisplay();
             if(falling_animation)
                 glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
             }
          else {
-            printf("You died\n");
             game_started = 0;
             falling_animation = 0;
         }
+        }
+        else {
+            printf("You died!\nScore: %u\n", Score);
+        }
     }
     if(value == TIMER_OBSTACLES) {
-        obstacles_animation += 0.15;
-        obstacles_animation_2 += 0.15;
-        obstacles_animation_3 += 0.15;
-        obstacles_animation_4 += 0.15;
-        obstacles_animation_5 += 0.15;
+        obstacles_animation += 0.25 + speed;
+        obstacles_animation_2 += 0.25 + speed;
+        obstacles_animation_3 += 0.25 + speed;
+        obstacles_animation_4 += 0.25 + speed;
+        obstacles_animation_5 += 0.25 + speed;
+        speed += 0.0001;
         glutPostRedisplay();
         if(game_started)
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_OBSTACLES);
@@ -194,7 +244,7 @@ static void drawCube()
     /*Materijali za objekat*/
     /*Koeficijenti preuzeti sa http://devernay.free.fr/cours/opengl/materials.html*/ 
     GLfloat ambient_coefs[] = {0.0215, 0.1745, 0.0215, 1};
-    GLfloat diffuse_coefs[] = {0.07568,  0.61424,  0.07568,  1};
+    GLfloat diffuse_coefs[] = {0.27568,  0.81424,  0.27568,  1};
     GLfloat specular_coefs[] = {0.633,  0.727811,  0.633,  1};
     GLfloat shininess = 0.6 * 128.0;
 
@@ -227,9 +277,9 @@ static void drawCube()
 
 static void drawStage()
 {
-    GLfloat ambient_coefs[] = {0.3, 0.3, 0.3, 1};
+    GLfloat ambient_coefs[] = {0.2, 0.2, 0.2, 1};
     GLfloat diffuse_coefs[] = {0.3,  0.3,  0.3,  1};
-    GLfloat specular_coefs[] = {0.3,  0.3,  0.3,  1};
+    GLfloat specular_coefs[] = {0.1,  0.1,  0.1,  1};
     GLfloat shininess = 0;
 
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient_coefs);
@@ -258,7 +308,7 @@ void obstacles()
     glMaterialf(GL_FRONT, GL_SHININESS, shininess);
     
     if(obstacles_animation == 0) {
-        srand(time(0));
+        srand(time(NULL));
         int r = rand() % 3;
     
         if(r == 0) 
@@ -269,27 +319,27 @@ void obstacles()
             position = 0;
     }
     if(obstacles_animation_2 == 0) {
-        srand(time(0));
+        srand(time(NULL));
         int r = rand() % 3;
         if(r == 0)
-            position_2 = 0;
-        else if(r == 1)
-            position_2 = -1;
-        else
             position_2 = 1;
+        else if(r == 1)
+            position_2 = 0;
+        else
+            position_2 = -1;
     }
     if(obstacles_animation_3 == 0) {
-        srand(time(0));
+        srand(time(NULL));
         int r = rand() % 3;
         if(r == 0)
-            position_3 = 1;
+            position_3 = -1;
         else if(r == 1)
             position_3 = 0;
         else
-            position_3 = -1;
+            position_3 = 1;
     }
     if(obstacles_animation_4 == 0) {
-        srand(time(0));
+        srand(time(NULL));
         int r = rand() % 3;
         if(r == 0)
             position_4 = 0;
@@ -299,23 +349,21 @@ void obstacles()
             position_4 = -1;
     }
     if(obstacles_animation_5 == 0) {
-        srand(time(0));
+        srand(time(NULL));
         int r = rand() % 3;
         if(r == 0)
-            position_5 = -1;
-        else if(r == 1)
             position_5 = 1;
-        else
+        else if(r == 1)
             position_5 = 0;
+        else
+            position_5 = -1;
     }
     glutSolidCube(1);
 }
 
 static void on_display(void)
 {
-    
     if(moving_object > 1 || moving_object < -1) { 
-        /*game_started = 0;*/
         if(!falling_animation) {
             falling_animation = 1;
             glutTimerFunc(TIMER_INTERVAL, on_timer, TIMER_FALL);
@@ -323,33 +371,32 @@ static void on_display(void)
     }
     
     /*Da li smo udarili u prepreku*/
+    if(game_started != 0) {
     if(jumping < 0.25 || jumping > 0.75) {
         if(obstacles_animation > 99.1 && (position == moving_object)&& obstacles_animation < 101) {
             game_started = 0;
-            printf("You died\n");
+            printf("You died!\nScore: %u\n", Score);
         }
         if(obstacles_animation_2 > 99.1 && (position_2 == moving_object)&& obstacles_animation_2 < 101) {
             game_started = 0;
-            printf("You died\n");
+            printf("You died!\nScore %u\n", Score);
         }
         if(obstacles_animation_3 > 99.1 && (position_3 == moving_object)&& obstacles_animation_3 < 101) {
             game_started = 0;
-            printf("You died\n");
+            printf("You died!\nScore: %u\n", Score);
         }
         if(obstacles_animation_4 > 99.1 && (position_4 == moving_object)&& obstacles_animation_4 < 101) {
             game_started = 0;
-            printf("You died\n");
+            printf("You died!\nScore: %u\n", Score);
         }
         if(obstacles_animation_5 > 99.1 && (position_5 == moving_object)&& obstacles_animation_5 < 101) {
             game_started = 0;
-            printf("You died\n");
+            printf("You died!\nScore: %u\n", Score);
         }
-    }
+    } }
+    
 
-
-
-
-   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glViewport(0, 0, window_width, window_height);
     
@@ -379,37 +426,50 @@ static void on_display(void)
         drawCube();
     glPopMatrix();
 
-    if(obstacles_animation >= 105) 
+    if(obstacles_animation >= 105) { 
         obstacles_animation = 0;
+        Score += 10;
+    }
     /*Iscrtava se prepreka*/
     glPushMatrix();
         glTranslatef(position, 0,obstacles_animation - 100);
         obstacles();
     glPopMatrix();
     
-    if(obstacles_animation_2 >= 105)
+    if(obstacles_animation_2 >= 105) {
         obstacles_animation_2 = 0;
+        Score += 10;
+    }
+    
     glPushMatrix();
         glTranslatef(position_2, 0, obstacles_animation_2 - 100);
         obstacles();
     glPopMatrix();
 
-    if(obstacles_animation_3 >= 105)
+    if(obstacles_animation_3 >= 105) {
         obstacles_animation_3 = 0;
+        Score += 10;
+    }
+    
     glPushMatrix();
         glTranslatef(position_3, 0, obstacles_animation_3 - 100);
         obstacles();
     glPopMatrix();
 
-    if(obstacles_animation_4 >= 105)
+    if(obstacles_animation_4 >= 105) {
         obstacles_animation_4 = 0;
+        Score += 10;
+    }
+    
     glPushMatrix();
         glTranslatef(position_4, 0, obstacles_animation_4 - 100);
         obstacles();
     glPopMatrix();
     
-    if(obstacles_animation_5 >= 105)
+    if(obstacles_animation_5 >= 105) {
         obstacles_animation_5 = 0;
+        Score += 10;
+    }
     glPushMatrix();
         glTranslatef(position_5, 0, obstacles_animation_5 - 100);
         obstacles();
